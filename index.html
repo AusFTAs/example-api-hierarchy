@@ -3,16 +3,15 @@
 <head>
   <title>HS Hierarchy Example</title>
   <meta charset="UTF-8">
-  <!-- jquery and friends -->
-  <script src="//ausftas.github.io/example-api-common/jquery-2.2.4.js"></script>
-  <script src="//ausftas.github.io/example-api-common/jquery-ui.js"></script>
-  <link rel="stylesheet" type="text/css" href="//ausftas.github.io/example-api-common/jquery-ui.css">
+  <!-- Babel, d3 and friends. B -->
+  <script src="/example-api-common/babel.min.js"></script>
+  <script src="/example-api-common/d3.v4.js"></script>
   <!-- look and feel -->
-  <link rel="stylesheet" type="text/css" href="//ausftas.github.io/example-api-common/style.css">
   <link rel="stylesheet" type="text/css" href="http://blog.dfilimonov.com/github-ribbons-css/ribbons.css">
-  <script src="//ausftas.github.io/example-api-common/style.js"></script>
+  <link rel="stylesheet" type="text/css" href="/example-api-common/style.css">
+  <script type="text/babel" data-presets="es2015" src="/example-api-common/style.js"></script>
   <!-- shared sources -->
-  <script src="//ausftas.github.io/example-api-common/common.js"></script>
+  <script type="text/babel" data-presets="es2015" src="/example-api-common/common.js"></script>
 </head>
 <body>
   <div id="header"></div>
@@ -28,86 +27,56 @@
     
     </div>
 
-    <script>
-      
-      $.startExample(function(hierarchy)
-      {
-        // helper functions
-        function filterType(type_)
-        {
-          return function(hSCode)
-          {
-            return hierarchy[hSCode].type === type_;
-          };
-        }
-        
-        function filterChapter(chapterStart, chapterEnd)
-        {
-          return function(hSCode)
-          {
-            return hSCode >= chapterStart && hSCode <= chapterEnd;
-          };
-        }
-        
-        function filterHS(chapter)
-        {
-          return function(hSCode)
-          {
-            return hSCode.indexOf(chapter) === 0;
-          };
-        }
-        
-        function headingToHTML(headingHSCode)
-        {
-          var heading = hierarchy[headingHSCode];
-          return '<li>' + 'Heading ' + headingHSCode + ' - ' + heading.description + '</li>';
-        }
-        
-        function chapterToHTML(chapterHSCode)
-        {
-          var chapter = hierarchy[chapterHSCode];
-          
-          return '<p>' + 
-                    '<h3>' + 
-                      'Chapter ' + chapterHSCode + ' - ' + chapter.description +
-                    '</h3>' + 
-                    '<ul>' + 
-                    Object.keys(hierarchy)
-                      .filter(filterType('heading'))
-                      .filter(filterHS(chapterHSCode))
-                      .sort()
-                      .map(headingToHTML)
-                      .join('') +
-                    '</ul>' + 
-                  '</p>';
-        }
-        
-        function sectionToHTML(sectionHSCode)
-        {
-          var section = hierarchy[sectionHSCode];
-          return '<p>' + 
-                    '<h2>' + 
-                      'Section ' + sectionHSCode + ' - ' + section.description +
-                    '</h2>' + 
-                    Object.keys(hierarchy)
-                      .filter(filterType('chapter'))
-                      .filter(filterChapter(section.chapterStart, section.chapterEnd))
-                      .sort()
-                      .map(chapterToHTML)
-                      .join('') +
-                  '</p>';
-        }
-        
-        
-        // display hierarchy
-        $('#hierarchy').html(Object.keys(hierarchy)
-          .filter(filterType('section'))
-          .map(sectionToHTML)
-          .join(''));
+    <script type="text/babel" data-presets="es2015" >
 
-        $('#hierarchy').show();
-        $('#loading').hide();
+      FTAPortalAPIExample.start(hierarchy =>
+      {
+        
+        hierarchy = FTAPortalAPIExample.stratifyHierarchy(hierarchy);
+        
+        const hierarchyContainer = d3.select('#hierarchy');
+        const loading = d3.select('#loading');
+        
+        hierarchyContainer.showTree(hierarchy.children, (container, node) =>
+        {
+          // color each level differently
+          container.style('color', ['#003366', '#336600', '#660033'][node.depth % 3]);
+          
+          // draw the top line with hs code and description
+          container.span(FTAPortalAPIExample.uglifyHSCode(node.id, true, false))
+            .style('font-weight', 'bold');
+          container.span(' - ');
+          container.span(node.data.description);
+          
+          container.br();
+          
+          // draw the bottom line with summaries in countryAgreements
+          node.data.countryAgreements.sort((a, b) => {
+            a = a.agreement + a.country;
+            b = b.agreement + b.country;
+            return a > b? 1 : a == b? 0 : -1;
+          }).forEach(countryAgreement =>
+          {
+            let marker = container.div().style('display', 'inline-block')
+              .style('border', '1px solid #DDEEFF')
+              .style('margin', '5px 5px 5px 5px')
+              .style('padding', '5px 5px 5px 5px')
+              .style('text-align', 'center')
+              .style('font-size', '10px');
+            let labels = Object.keys(countryAgreement)
+              .map(field => countryAgreement[field] === true? field : countryAgreement[field]);
+            marker.html(labels.join('<br />'));
+          });
+        });
+
+        hierarchyContainer.show();
+        loading.hide();
       });
+
+
+      
+
+
     </script>
   </div>
   
