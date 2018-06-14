@@ -15,41 +15,42 @@
 </head>
 <body>
   <div id="header"></div>
-  
+
   <div id="example" class="content">
     <h1>API Hierarchy Example</h1>
-    
+
     <div id="loading">
       Please wait while it loads.
     </div>
-    
+
     <div id="hierarchy" style="display: none;" >
-    
+
     </div>
 
-    <script type="text/babel" data-presets="es2015" >
+    <script type="text/babel" >
 
-      FTAPortalAPIExample.start(hierarchy =>
+      FTAPortalAPIExample.start(async function(version, agreements)
       {
-        
+        let hierarchy = await FTAPortalAPIExample.invoke('/products/hierarchy.json');
+
         hierarchy = FTAPortalAPIExample.stratifyHierarchy(hierarchy);
-        
+
         const hierarchyContainer = d3.select('#hierarchy');
         const loading = d3.select('#loading');
-        
+
         hierarchyContainer.showTree(hierarchy.children, (container, node) =>
         {
           // color each level differently
           container.style('color', ['#003366', '#336600', '#660033'][node.depth % 3]);
-          
+
           // draw the top line with hs code and description
           container.span(FTAPortalAPIExample.uglifyHSCode(node.id, true, false))
             .style('font-weight', 'bold');
           container.span(' - ');
           container.span(node.data.description);
-          
+
           container.br();
-          
+
           // draw the bottom line with summaries in countryAgreements
           node.data.countryAgreements.sort((a, b) => {
             a = a.agreement + a.country;
@@ -74,13 +75,13 @@
       });
 
 
-      
+
 
 
     </script>
   </div>
-  
+
   <div id="footer"></div>
-  
+
 </body>
 </html>
